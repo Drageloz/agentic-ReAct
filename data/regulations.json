@@ -1,0 +1,89 @@
+{
+  "documents": [
+    {
+      "id": "reg-001",
+      "title": "EU Regulation 952/2013 — Union Customs Code",
+      "content": "The Union Customs Code (UCC) establishes the framework for customs rules and procedures in the European Union. All goods entering or leaving the EU customs territory are subject to customs supervision. Shipments must be accompanied by a customs declaration (SAD) filed electronically through the ICS2 system. Goods subject to prohibition or restriction require additional licenses. Penalties for non-compliance range from administrative fines to seizure of goods.",
+      "source": "EUR-Lex 952/2013",
+      "category": "customs"
+    },
+    {
+      "id": "reg-002",
+      "title": "Incoterms 2020 — International Commercial Terms",
+      "content": "Incoterms 2020 defines 11 trade terms for international and domestic contracts. Key terms: EXW (Ex Works) — seller makes goods available at their premises, all costs and risks transfer to buyer. FOB (Free On Board) — seller delivers goods on board the vessel. CIF (Cost Insurance Freight) — seller covers freight and insurance to destination port. DAP (Delivered At Place) — seller responsible for delivery to named place. DDP (Delivered Duty Paid) — seller bears all costs including import duties.",
+      "source": "ICC Incoterms 2020",
+      "category": "commercial_terms"
+    },
+    {
+      "id": "reg-003",
+      "title": "Dangerous Goods Air Transport — IATA DGR",
+      "content": "The IATA Dangerous Goods Regulations (DGR) govern the transport of hazardous materials by air. Shippers must classify goods according to UN hazard classes (1-9). Class 1: Explosives. Class 3: Flammable liquids. Class 8: Corrosives. Class 9: Miscellaneous dangerous goods (including lithium batteries). Each package must be labeled, marked, and accompanied by a Shipper's Declaration for Dangerous Goods. Lithium-ion batteries (UN3480, UN3481) have specific state-of-charge limitations (≤30% for certain categories).",
+      "source": "IATA DGR 65th Edition",
+      "category": "dangerous_goods"
+    },
+    {
+      "id": "reg-004",
+      "title": "GDPR — Data Protection in Logistics",
+      "content": "Under GDPR (Regulation 2016/679), logistics companies processing personal data of EU residents must ensure lawful basis for processing, data minimisation, and storage limitation. Recipient personal data (name, address, phone) must be protected in transit via encryption. Data retention for shipping records: operational data 3 years, financial records 7 years. Data subject access requests must be responded to within 30 days. Cross-border data transfers to non-EEA countries require Standard Contractual Clauses (SCCs) or adequacy decisions.",
+      "source": "GDPR 2016/679",
+      "category": "data_protection"
+    },
+    {
+      "id": "reg-005",
+      "title": "Cabotage Regulations — Road Transport in the EU",
+      "content": "Cabotage refers to transport operations performed within a single EU member state by a non-resident carrier. Regulation 1072/2009 permits up to 3 cabotage operations within 7 days after unloading an international shipment. After that period, the vehicle must leave the country. Systematic cabotage is strictly prohibited. Carriers must carry proof of the international transport and all cabotage operations. Fines for illegal cabotage can reach €10,000 per infringement in some member states.",
+      "source": "EC Regulation 1072/2009",
+      "category": "road_transport"
+    },
+    {
+      "id": "reg-006",
+      "title": "Cold Chain Requirements — Temperature-Controlled Shipments",
+      "content": "Pharmaceutical products shipped under GDP (Good Distribution Practice) guidelines must maintain temperature ranges: refrigerated products +2°C to +8°C, frozen products ≤-15°C, controlled room temperature +15°C to +25°C. Temperature excursions must be documented and assessed by a qualified person. Continuous temperature monitoring devices (data loggers) are mandatory. Transport containers must be validated for the required temperature range. Deviation reports must be retained for 5 years.",
+      "source": "EU GDP Guidelines 2013/C 68/01",
+      "category": "pharmaceuticals"
+    },
+    {
+      "id": "reg-007",
+      "title": "Customs Valuation — WTO Agreement on Customs Valuation",
+      "content": "Customs value is primarily determined by the transaction value method (Article 1 of the WTO Agreement). The transaction value is the price actually paid or payable for the goods plus: (a) commissions and brokerage; (b) cost of containers and packing; (c) royalties and licence fees; (d) transport and insurance costs to the port of entry. If transaction value cannot be used, alternative methods apply in sequence: identical goods value, similar goods value, deductive value, computed value, fall-back method.",
+      "source": "WTO Customs Valuation Agreement",
+      "category": "customs"
+    },
+    {
+      "id": "reg-008",
+      "title": "Packaging Standards — ISPM 15 Phytosanitary Measures",
+      "content": "ISPM 15 (International Standards for Phytosanitary Measures No. 15) regulates the use of wood packaging material in international trade to prevent the spread of invasive insects and diseases. Wood packaging (pallets, crates, dunnage) must be treated using approved methods: Heat Treatment (HT) to a core temperature of 56°C for 30 continuous minutes, or Methyl Bromide (MB) fumigation, or Dielectric Heating (DH). Treated wood must bear the IPPC mark with country code, producer number, and treatment method abbreviation.",
+      "source": "FAO ISPM 15 (2018 revision)",
+      "category": "phytosanitary"
+    },
+    {
+      "id": "reg-009",
+      "title": "Import Duties — EU Common External Tariff (CET)",
+      "content": "The EU Common External Tariff applies uniform import duties on goods from non-EU countries. Duty rates are determined by the Combined Nomenclature (CN) code. Key rates: textiles 12%, electronics 0-14%, automotive parts 4.5-6.5%, agricultural products 0-20% (with seasonal variations). Preferential rates apply under Free Trade Agreements (e.g. CETA with Canada, JEFTA with Japan, GSP for developing countries). Anti-dumping duties may be added on top of standard rates. TARIC system provides the complete tariff database.",
+      "source": "EU TARIC Database / CN 2024",
+      "category": "customs"
+    },
+    {
+      "id": "reg-010",
+      "title": "Carrier Liability — CMR Convention",
+      "content": "The Convention on the Contract for the International Carriage of Goods by Road (CMR) governs road freight across signatory countries. Carrier liability for loss or damage is capped at 8.33 SDR (Special Drawing Rights) per kilogram of gross weight. The carrier is liable unless it proves: act of God, defect in goods, or fault of the shipper. Claims must be made in writing within 7 days of delivery for damage, or 21 days for loss. Legal proceedings must be initiated within 3 years of delivery.",
+      "source": "UNECE CMR Convention (1956, Geneva Protocol 1978)",
+      "category": "carrier_liability"
+    },
+    {
+      "id": "reg-011",
+      "title": "Export Controls — EU Dual-Use Regulation 2021/821",
+      "content": "Regulation 2021/821 controls the export of dual-use items (goods, software, technology that can be used for both civil and military purposes). Exporters must classify their items against Annex I of the Regulation and apply for an export licence when required. General Export Authorisations (GEAs) cover certain items to approved destinations. Catch-all controls may require a licence even for non-listed items if the exporter knows the items are intended for military end-use. Penalties for violations include fines and criminal prosecution.",
+      "source": "EU Regulation 2021/821",
+      "category": "export_controls"
+    },
+    {
+      "id": "reg-012",
+      "title": "Last-Mile Delivery Regulations — Urban Access Restrictions",
+      "content": "Many European cities have implemented Low Emission Zones (LEZ) and Zero Emission Zones (ZEZ) restricting conventional diesel and petrol vehicles. Paris (ZFE-m): diesel vehicles pre-Euro 5 banned. London ULEZ: vehicles must meet Euro 6 (diesel) or Euro 4 (petrol) standards. Madrid ZBE Especial: heavy vehicles >3.5t must have at least Euro 5 engine. Amsterdam: all city centre deliveries must be zero-emission by 2025. Fines for violations: £180 in London, €90-€500 in Spanish cities. Delivery time windows are also restricted in historic centres.",
+      "source": "Various municipal regulations 2024-2025",
+      "category": "urban_logistics"
+    }
+  ]
+}
+
