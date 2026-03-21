@@ -42,18 +42,33 @@ class SimulatedRAGAdapter(RAGPort):
         query: str,
         top_k: int = 5,
         rag_session_id: str | None = None,
+        metadata_filter: dict[str, Any] | None = None,
     ) -> list[RAGDocument]:
         if not self._documents:
             return []
 
+        # Apply metadata pre-filter (AND semantics) before scoring
+        candidates = self._documents
+        if metadata_filter:
+            candidates = [
+                doc for doc in candidates
+                if all(
+                    str(doc.get(k, "")).lower() == str(v).lower()
+                    if not isinstance(v, dict)
+                    else self._match_operator(doc.get(k), v)
+                    for k, v in metadata_filter.items()
+                )
+            ]
+
         tokens = set(re.findall(r"\w+", query.lower()))
         scored: list[tuple[float, dict[str, Any]]] = []
 
-        for doc in self._documents:
+        for doc in candidates:
             text_blob = (doc.get("title", "") + " " + doc.get("content", "")).lower()
             doc_tokens = re.findall(r"\w+", text_blob)
             total = len(doc_tokens) or 1
             score = sum(doc_tokens.count(t) / total for t in tokens)
+
             # Slight boost for title matches
             title_tokens = re.findall(r"\w+", doc.get("title", "").lower())
             title_matches = sum(1 for t in tokens if t in title_tokens)
@@ -69,8 +84,36 @@ class SimulatedRAGAdapter(RAGPort):
                 content=doc.get("content", ""),
                 score=round(score, 4),
                 source=doc.get("source", "regulations.json"),
+                metadata={
+                    "year": doc.get("year"),
+                    "region": doc.get("region"),
+                    "category": doc.get("category"),
+                    "effective_date": doc.get("effective_date"),
+                },
             )
             for i, (score, doc) in enumerate(scored[:top_k])
             if score > 0
         ]
+
+    @staticmethod
+    def _match_operator(value: Any, operator: dict) -> bool:
+        """Evaluate a Chroma-style operator dict against a scalar value."""
+        try:
+            if "$eq" in operator:
+                return value == operator["$eq"]
+            if "$ne" in operator:
+                return value != operator["$ne"]
+            if "$gte" in operator:
+                return float(value) >= float(operator["$gte"])
+            if "$gt" in operator:
+                return float(value) > float(operator["$gt"])
+            if "$lte" in operator:
+                return float(value) <= float(operator["$lte"])
+            if "$lt" in operator:
+                return float(value) < float(operator["$lt"])
+            if "$in" in operator:
+                return value in operator["$in"]
+        except (TypeError, ValueError):
+            pass
+        return False
 

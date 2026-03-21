@@ -17,6 +17,7 @@ from app.infrastructure.db.mysql_conversation_adapter import MySQLConversationAd
 from app.infrastructure.db.mysql_erp_adapter import MySQLERPAdapter
 from app.infrastructure.llm.llm_factory import create_llm_adapter
 from app.infrastructure.rag.simulated_rag_adapter import SimulatedRAGAdapter
+from app.config.settings import RAGProvider
 
 
 # ── Singletons (created once at startup) ─────────────────────────────────────
@@ -32,7 +33,24 @@ def _get_conversation_adapter() -> MySQLConversationAdapter:
 
 
 @lru_cache
-def _get_rag_adapter() -> SimulatedRAGAdapter:
+def _get_rag_adapter():
+    """
+    Factory for RAG adapters.
+
+    RAG_PROVIDER=chroma    → ChromaRAGAdapter  (vector store real + metadata filtering)
+    RAG_PROVIDER=simulated → SimulatedRAGAdapter (keyword TF-IDF, no API key needed)
+    """
+    s = get_settings()
+    if s.RAG_PROVIDER == RAGProvider.CHROMA:
+        if not s.OPENAI_API_KEY:
+            import logging
+            logging.getLogger(__name__).warning(
+                "RAG_PROVIDER=chroma but OPENAI_API_KEY is missing — "
+                "falling back to SimulatedRAGAdapter"
+            )
+            return SimulatedRAGAdapter()
+        from app.infrastructure.rag.chroma_rag_adapter import ChromaRAGAdapter
+        return ChromaRAGAdapter(openai_api_key=s.OPENAI_API_KEY)
     return SimulatedRAGAdapter()
 
 

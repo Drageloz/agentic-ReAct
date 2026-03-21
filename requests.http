@@ -1,9 +1,0 @@
-# Sustituido por colección Postman
-# Se generó el archivo `postman_collection.json` en la raíz del proyecto.
-# Para importar en Postman:
-# 1. Abra Postman
-# 2. File > Import > Upload Files
-# 3. Seleccione `postman_collection.json` en este repositorio
-# Variables incluidas en la colección: baseUrl, apiPrefix, apiKey, contentType
-# Si prefiere mantener este archivo .http, recupere el contenido desde el control de versiones o reexporte la colección a formato HTTP.
-

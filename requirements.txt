@@ -4,8 +4,14 @@ uvicorn[standard]==0.32.1
 starlette==0.41.3
 
 # LLM providers
-openai==1.58.1
+openai>=1.58.1
 anthropic==0.42.0
+# LangChain — satisfies prueba técnica requirement; LangChainAdapter implements LLMPort
+langchain-openai>=0.3.0
+langchain-core>=0.3.0
+# Vector store real con metadata filtering — ChromaRAGAdapter
+langchain-community>=0.4.0
+chromadb>=1.0.0
 
 # Database
 sqlalchemy==2.0.36

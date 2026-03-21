@@ -15,6 +15,12 @@ from pydantic_settings import BaseSettings
 class LLMProvider(str, Enum):
     OPENAI = "openai"
     CLAUDE = "claude"
+    LANGCHAIN = "langchain"   # LangChain adapter (uses ChatOpenAI under the hood)
+
+
+class RAGProvider(str, Enum):
+    SIMULATED = "simulated"   # keyword TF-IDF — no external services needed
+    CHROMA = "chroma"         # ChromaDB + OpenAI Embeddings — real vector store
 
 
 class Settings(BaseSettings):
@@ -35,6 +41,11 @@ class Settings(BaseSettings):
 
     # ── ReAct Agent ──────────────────────────────────────────────────────────
     AGENT_MAX_ITERATIONS: int = 10
+
+    # ── RAG Provider ─────────────────────────────────────────────────────────
+    # simulated → keyword TF-IDF (no API key needed, default for local dev)
+    # chroma    → ChromaDB + OpenAI Embeddings (real vector store with metadata filtering)
+    RAG_PROVIDER: RAGProvider = RAGProvider.CHROMA
 
     # ── Database (MySQL) ─────────────────────────────────────────────────────
     MYSQL_HOST: str = "db"

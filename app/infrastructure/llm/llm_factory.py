@@ -1,9 +1,3 @@
-"""
-LLM Factory — selects and instantiates the correct LLMPort adapter
-based on the LLM_PROVIDER environment variable.
-"""
-from __future__ import annotations
-
 from app.config.settings import LLMProvider, Settings
 from app.domain.ports.llm_port import LLMPort
 

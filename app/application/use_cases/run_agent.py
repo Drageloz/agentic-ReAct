@@ -7,6 +7,11 @@ Orchestrates:
   3. Run ReactOrchestrator (streaming)
   4. Persist updated Conversation
   5. Yield SSE-ready dicts
+
+Exceptions:
+  LLMError  — raised when the LLM provider is unreachable / returns an error
+  ERPError  — raised when the ERP/DB is unreachable
+  AgentError — raised for other agent-logic failures
 """
 from __future__ import annotations
 
@@ -20,6 +25,20 @@ from app.domain.entities.conversation import Conversation, Message, MessageRole
 from app.domain.ports.conversation_repository_port import ConversationRepositoryPort
 
 logger = logging.getLogger(__name__)
+
+
+# ── Domain-level error hierarchy ──────────────────────────────────────────────
+
+class AgentError(Exception):
+    """Base class for agent errors."""
+
+
+class LLMError(AgentError):
+    """Raised when the LLM provider fails (network, rate-limit, auth)."""
+
+
+class ERPError(AgentError):
+    """Raised when the ERP / database is unreachable or returns an error."""
 
 
 class RunAgentUseCase:
@@ -72,12 +91,39 @@ class RunAgentUseCase:
         # ── Stream ReAct steps ────────────────────────────────────────────
         final_answer_text = ""
 
-        async for step in self._orchestrator.run(state):
-            event_data = step.to_dict()
-            yield {"event": step.step_type.value, "data": event_data}
+        try:
+            async for step in self._orchestrator.run(state):
+                event_data = step.to_dict()
+                yield {"event": step.step_type.value, "data": event_data}
 
-            if step.step_type == StepType.FINAL_ANSWER:
-                final_answer_text = step.content
+                if step.step_type == StepType.FINAL_ANSWER:
+                    final_answer_text = step.content
+
+        except Exception as exc:
+            exc_str = str(exc).lower()
+            exc_type = type(exc).__name__
+
+            # Classify the error by inspecting its type/message
+            if any(kw in exc_str for kw in (
+                "openai", "anthropic", "api key", "rate limit", "quota",
+                "authentication", "authenticationerror", "ratelimiterror",
+                "apierror", "timeout", "connectionerror",
+            )) or any(kw in exc_type.lower() for kw in (
+                "openai", "anthropic", "ratelimit", "apierror",
+            )):
+                raise LLMError(f"LLM provider error: {exc}") from exc
+
+            if any(kw in exc_str for kw in (
+                "mysql", "operationalerror", "programmingerror",
+                "can't connect", "connection refused", "getaddrinfo",
+                "table", "doesn't exist", "no module named 'greenlet'",
+                "sqlalchemy",
+            )) or any(kw in exc_type.lower() for kw in (
+                "operationalerror", "programmingerror", "sqlerror",
+            )):
+                raise ERPError(f"ERP/database error: {exc}") from exc
+
+            raise AgentError(f"Agent execution failed: {exc}") from exc
 
         # ── Persist conversation ──────────────────────────────────────────
         if final_answer_text:
