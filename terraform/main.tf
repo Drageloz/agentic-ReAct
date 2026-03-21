@@ -248,10 +248,13 @@ resource "azurerm_cognitive_account" "openai" {
   kind                          = "OpenAI"
   sku_name                      = "S0"
   public_network_access_enabled = false # CRITICAL: no public access
+  # custom_subdomain_name is required by the provider whenever network_acls is set
+  custom_subdomain_name         = "aoai-${var.project}-${var.environment}"
   tags                          = var.tags
 
   network_acls {
     default_action = "Deny"
+    ip_rules       = [] # no public IPs allowed — traffic only via Private Endpoint
   }
 }
 
@@ -266,8 +269,8 @@ resource "azurerm_cognitive_deployment" "gpt4o" {
     version = "2024-11-20"
   }
 
-  sku {
-    name     = "GlobalStandard"
+  scale {
+    type     = "GlobalStandard"
     capacity = var.openai_capacity_tpm
   }
 }
@@ -283,8 +286,8 @@ resource "azurerm_cognitive_deployment" "embeddings" {
     version = "1"
   }
 
-  sku {
-    name     = "Standard"
+  scale {
+    type     = "Standard"
     capacity = 120
   }
 }
@@ -345,9 +348,8 @@ resource "azurerm_mysql_flexible_server" "main" {
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
 
-  high_availability {
-    mode = "Disabled" # enable SameZone/ZoneRedundant for production
-  }
+  # high_availability block omitted → HA disabled by default
+  # To enable: add high_availability { mode = "SameZone" } or "ZoneRedundant"
 
   tags = var.tags
 
@@ -530,22 +532,18 @@ resource "azurerm_container_app" "api" {
 
       # ── Health probes ───────────────────────────────────────────────────
       liveness_probe {
-        transport = "HTTP"
-        path      = "/health"
-        port      = 8000
-
-        initial_delay           = 15
-        period_seconds          = 20
+        transport               = "HTTP"
+        path                    = "/health"
+        port                    = 8000
+        interval_seconds        = 20
         failure_count_threshold = 3
       }
 
       readiness_probe {
-        transport = "HTTP"
-        path      = "/health"
-        port      = 8000
-
-        initial_delay           = 10
-        period_seconds          = 10
+        transport               = "HTTP"
+        path                    = "/health"
+        port                    = 8000
+        interval_seconds        = 10
         failure_count_threshold = 3
       }
     }
