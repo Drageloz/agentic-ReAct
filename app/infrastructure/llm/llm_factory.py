@@ -29,5 +29,16 @@ def create_llm_adapter(settings: Settings) -> LLMPort:
             max_tokens=settings.LLM_MAX_TOKENS,
         )
 
+    if settings.LLM_PROVIDER == LLMProvider.LANGCHAIN:
+        from app.infrastructure.llm.langchain_adapter import LangChainAdapter
+
+        if not settings.OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=langchain")
+        return LangChainAdapter(
+            api_key=settings.OPENAI_API_KEY,
+            model=settings.OPENAI_MODEL,
+            max_tokens=settings.LLM_MAX_TOKENS,
+        )
+
     raise ValueError(f"Unsupported LLM_PROVIDER: {settings.LLM_PROVIDER}")
 
