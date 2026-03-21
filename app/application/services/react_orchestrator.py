@@ -63,8 +63,6 @@ class ReactOrchestrator:
             accumulated_text = ""
             tool_call_data: ToolCall | None = None
 
-            # NOTE: chat_completion_stream returns an async iterator (async generator).
-            # Do NOT `await` it; instead iterate directly with `async for`.
             async for chunk in self._llm.chat_completion_stream(
                 messages=messages,
                 tools=tool_defs,

@@ -122,7 +122,7 @@ class LangChainAdapter(LLMPort):
 
         response: AIMessage = await llm.ainvoke(lc_messages)  # type: ignore[assignment]
 
-        # If the model decided to call a tool, serialise it as our sentinel JSON
+        # If the model requested a tool call, serialise it as a sentinel JSON string
         if response.tool_calls:
             tc = response.tool_calls[0]
             return json.dumps(

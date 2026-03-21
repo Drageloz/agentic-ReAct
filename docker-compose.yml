@@ -22,7 +22,34 @@ services:
       retries: 10
       start_period: 30s
 
+  # ── FastAPI Application ─────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: react_api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Override DB host to point at the compose service name
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount data folder so RAG corpus is always up to date without rebuild
+      - ./data:/app/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
 volumes:
   mysql_data:
     driver: local
-

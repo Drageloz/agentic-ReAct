@@ -13,5 +13,15 @@ venv/
 htmlcov/
 .coverage
 
-
+.chroma_store
 .idea
+
+# Terraform — never commit state or real variable values
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+terraform/tfplan
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/crash.log
+

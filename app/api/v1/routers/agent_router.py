@@ -1,8 +1,3 @@
-"""
-Agent Router — POST /chat  (SSE streaming)
-           — GET  /conversations/{conversation_id}
-           — GET  /conversations?user_id=...
-"""
 from __future__ import annotations
 
 import logging

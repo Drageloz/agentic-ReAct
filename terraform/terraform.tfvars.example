@@ -1,0 +1,45 @@
+# terraform.tfvars.example
+# ─────────────────────────────────────────────────────────────────────────────
+# Copy this file to terraform.tfvars and fill in the real values.
+# NEVER commit terraform.tfvars to version control — add it to .gitignore.
+#
+# Usage:
+#   cp terraform.tfvars.example terraform.tfvars
+#   terraform plan
+#   terraform apply
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Project ───────────────────────────────────────────────────────────────────
+project             = "agentic-react"
+environment         = "prod"
+resource_group_name = "rg-agentic-react-prod"
+location            = "westeurope"
+
+tags = {
+  project     = "agentic-react"
+  environment = "prod"
+  managed_by  = "terraform"
+  team        = "platform"
+}
+
+# ── Azure OpenAI ──────────────────────────────────────────────────────────────
+# GPT-4o is available in: eastus, eastus2, swedencentral, westus
+openai_location     = "eastus"
+openai_api_key      = "YOUR_AZURE_OPENAI_KEY_HERE"   # sensitive — use env var TF_VAR_openai_api_key
+openai_capacity_tpm = 30
+
+# ── MySQL ─────────────────────────────────────────────────────────────────────
+mysql_admin_user = "reactadmin"
+mysql_password   = "YOUR_STRONG_PASSWORD_HERE"        # sensitive — use env var TF_VAR_mysql_password
+mysql_database   = "react_db"
+
+# ── Application security ──────────────────────────────────────────────────────
+valid_api_keys = ["prod-key-replace-me", "second-key-replace-me"]  # sensitive
+
+# ── Container App ─────────────────────────────────────────────────────────────
+container_cpu    = 0.5
+container_memory = "1Gi"
+min_replicas     = 1
+max_replicas     = 5
+image_tag        = "latest"
+
