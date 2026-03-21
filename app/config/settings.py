@@ -47,19 +47,33 @@ class Settings(BaseSettings):
     # chroma    → ChromaDB + OpenAI Embeddings (real vector store with metadata filtering)
     RAG_PROVIDER: RAGProvider = RAGProvider.CHROMA
 
-    # ── Database (MySQL) ─────────────────────────────────────────────────────
-    MYSQL_HOST: str = "db"
-    MYSQL_PORT: int = 3306
-    MYSQL_USER: str = "reactuser"
-    MYSQL_PASSWORD: str = "reactpass"
-    MYSQL_DATABASE: str = "react_db"
+    # ── Database (SQL Server — local Docker & Azure SQL) ─────────────────────
+    # Local dev (docker-compose): MSSQL_HOST=db, MSSQL_PORT=1433
+    # Azure prod: MSSQL_HOST=<azure-sql-fqdn>, driver handled via ODBC DSN
+    MSSQL_HOST: str = "db"
+    MSSQL_PORT: int = 1433
+    MSSQL_USER: str = "sa"
+    MSSQL_PASSWORD: str = "React4as2#Strong!"
+    MSSQL_DATABASE: str = "react_db"
+    # ODBC driver name — must match the driver installed in the container/host
+    # Local Docker: "ODBC Driver 18 for SQL Server"
+    # Azure: same or "ODBC Driver 17 for SQL Server"
+    MSSQL_DRIVER: str = "ODBC Driver 18 for SQL Server"
 
     @property
     def DATABASE_URL(self) -> str:  # noqa: N802
-        return (
-            f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
-            f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
+        # aioodbc connection string (async ODBC via SQLAlchemy)
+        # TrustServerCertificate=yes is needed for local dev with self-signed cert
+        conn = (
+            f"DRIVER={{{self.MSSQL_DRIVER}}};"
+            f"SERVER={self.MSSQL_HOST},{self.MSSQL_PORT};"
+            f"DATABASE={self.MSSQL_DATABASE};"
+            f"UID={self.MSSQL_USER};"
+            f"PWD={self.MSSQL_PASSWORD};"
+            "TrustServerCertificate=yes;"
+            "Encrypt=yes;"
         )
+        return f"mssql+aioodbc:///?odbc_connect={conn}"
 
     # ── Security ─────────────────────────────────────────────────────────────
     SECRET_KEY: str = "change-me-in-production-please"

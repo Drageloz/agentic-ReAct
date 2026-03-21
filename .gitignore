@@ -20,6 +20,7 @@ htmlcov/
 terraform/.terraform/
 terraform/.terraform.lock.hcl
 terraform/terraform.tfvars
+terraform/plan.auto.tfvars
 terraform/tfplan
 terraform/*.tfstate
 terraform/*.tfstate.backup

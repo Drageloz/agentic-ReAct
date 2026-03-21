@@ -1,26 +1,42 @@
 services:
 
-  # ── MySQL Database ──────────────────────────────────────────────────────────
+  # ── SQL Server Database ─────────────────────────────────────────────────────
   db:
-    image: mysql:8.4
+    image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: react_db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: react_db
-      MYSQL_USER: reactuser
-      MYSQL_PASSWORD: reactpass
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "React4as2#Strong!"
+      MSSQL_PID: "Developer"
     ports:
-      - "3306:3306"
+      - "1433:1433"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./sql/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - mssql_data:/var/opt/mssql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "reactuser", "--password=reactpass"]
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd",
+             "-S", "localhost", "-U", "sa", "-P", "React4as2#Strong!",
+             "-Q", "SELECT 1", "-C"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 30s
+      retries: 12
+      start_period: 40s
+
+  # ── DB Init (runs schema + seed once, then exits) ───────────────────────────
+  db-init:
+    image: mcr.microsoft.com/mssql-tools:latest
+    container_name: react_db_init
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./sql:/sql:ro
+    command: >
+      /bin/bash -c "
+        /opt/mssql-tools/bin/sqlcmd -S db -U sa -P 'React4as2#Strong!' -i /sql/init.sql -C &&
+        echo 'Schema initialised'
+      "
+    restart: "no"
 
   # ── FastAPI Application ─────────────────────────────────────────────────────
   api:
@@ -32,24 +48,30 @@ services:
     env_file:
       - .env
     environment:
-      # Override DB host to point at the compose service name
-      MYSQL_HOST: db
-      MYSQL_PORT: 3306
+      # Override DB settings to point at the compose service
+      MSSQL_HOST: db
+      MSSQL_PORT: 1433
+      MSSQL_USER: sa
+      MSSQL_PASSWORD: "React4as2#Strong!"
+      MSSQL_DATABASE: react_db
+      MSSQL_DRIVER: "ODBC Driver 18 for SQL Server"
     ports:
       - "8000:8000"
     volumes:
-      # Mount data folder so RAG corpus is always up to date without rebuild
       - ./data:/app/data:ro
     depends_on:
       db:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 20s
 
 volumes:
-  mysql_data:
+  mssql_data:
     driver: local

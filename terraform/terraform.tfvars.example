@@ -26,15 +26,38 @@ tags = {
 # GPT-4o is available in: eastus, eastus2, swedencentral, westus
 openai_location     = "eastus"
 openai_api_key      = "YOUR_AZURE_OPENAI_KEY_HERE"   # sensitive — use env var TF_VAR_openai_api_key
-openai_capacity_tpm = 30
+openai_capacity_tpm = 1                              # start with 1k TPM; increase after quota approval
+# "Standard" works on all subscriptions.
+# Switch to "GlobalStandard" once quota is approved: https://aka.ms/oai/quotaincrease
+openai_deployment_type = "Standard"
 
-# ── MySQL ─────────────────────────────────────────────────────────────────────
-mysql_admin_user = "reactadmin"
-mysql_password   = "YOUR_STRONG_PASSWORD_HERE"        # sensitive — use env var TF_VAR_mysql_password
-mysql_database   = "react_db"
+# Model to deploy: "gpt-4o-mini" (available on most subs) or "gpt-4o" (requires quota approval)
+openai_model = "gpt-4o-mini"
+
+# Set to false if your subscription has quota=0 for the selected model.
+# The Cognitive Account is still created; request quota at https://aka.ms/oai/quotaincrease
+# then set to true and re-apply.
+deploy_openai_models = true
+
+# ── Azure SQL (SQL Server) ────────────────────────────────────────────────────
+# Azure SQL is available in all Azure regions — no capacity restrictions
+mssql_admin_user = "reactadmin"
+mssql_password   = "YOUR_STRONG_PASSWORD_HERE"   # sensitive — use env var TF_VAR_mssql_password
+mssql_database   = "react_db"
+# SKU options:
+#   "Basic"       → 5 DTUs, cheapest, dev/test
+#   "S1"          → 20 DTUs, light prod
+#   "GP_S_Gen5_1" → serverless, auto-pause, best for demos
+mssql_sku        = "Basic"
 
 # ── Application security ──────────────────────────────────────────────────────
 valid_api_keys = ["prod-key-replace-me", "second-key-replace-me"]  # sensitive
+
+# ── Terraform runner IP ───────────────────────────────────────────────────────
+# IP of the machine running terraform apply — whitelisted in Key Vault so
+# Terraform can write secrets. Get yours:
+#   (Invoke-WebRequest https://api.ipify.org -UseBasicParsing).Content
+terraform_ip = "YOUR_PUBLIC_IP_HERE"
 
 # ── Container App ─────────────────────────────────────────────────────────────
 container_cpu    = 0.5

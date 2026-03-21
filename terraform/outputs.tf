@@ -30,9 +30,9 @@ output "openai_endpoint" {
   value       = azurerm_cognitive_account.openai.endpoint
 }
 
-output "mysql_fqdn" {
-  description = "MySQL Flexible Server FQDN (private, VNet-internal only)."
-  value       = azurerm_mysql_flexible_server.main.fqdn
+output "mssql_fqdn" {
+  description = "Azure SQL Server FQDN (private, VNet-internal only)."
+  value       = azurerm_mssql_server.main.fully_qualified_domain_name
 }
 
 output "key_vault_uri" {

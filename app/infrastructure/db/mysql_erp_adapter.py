@@ -1,8 +1,12 @@
 """
-MySQL ERP Adapter — implements ERPPort.
-Queries the `shipments` and `users` tables.
+SQL Server ERP Adapter — implements ERPPort.
+Queries the `shipments` and `users` tables using T-SQL.
 
 SECURITY NOTE: salary and other sensitive columns are NEVER returned.
+
+Dialect differences vs MySQL:
+  - TOP(n) instead of LIMIT n
+  - No backtick quoting — uses [] or nothing
 """
 from __future__ import annotations
 
@@ -25,6 +29,8 @@ def _sanitize_row(row_dict: dict[str, Any]) -> dict[str, Any]:
 
 
 class MySQLERPAdapter(ERPPort):
+    """Named MySQLERPAdapter for backwards-compat; backed by SQL Server."""
+
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
 
@@ -33,11 +39,10 @@ class MySQLERPAdapter(ERPPort):
             result = await session.execute(
                 text(
                     """
-                    SELECT id, tracking_number, status, origin, destination,
+                    SELECT TOP(1) id, tracking_number, status, origin, destination,
                            estimated_delivery, weight_kg, carrier, user_id, created_at
                     FROM shipments
                     WHERE id = :shipment_id
-                    LIMIT 1
                     """
                 ),
                 {"shipment_id": shipment_id},
@@ -69,12 +74,11 @@ class MySQLERPAdapter(ERPPort):
             result = await session.execute(
                 text(
                     f"""
-                    SELECT id, tracking_number, status, origin, destination,
+                    SELECT TOP(:limit) id, tracking_number, status, origin, destination,
                            estimated_delivery, weight_kg, carrier, user_id, created_at
                     FROM shipments
                     {where_clause}
                     ORDER BY created_at DESC
-                    LIMIT :limit
                     """
                 ),
                 params,
@@ -87,10 +91,9 @@ class MySQLERPAdapter(ERPPort):
             result = await session.execute(
                 text(
                     """
-                    SELECT id, username, email, full_name, department, role, created_at
+                    SELECT TOP(1) id, username, email, full_name, department, role, created_at
                     FROM users
                     WHERE id = :user_id
-                    LIMIT 1
                     """
                 ),
                 {"user_id": user_id},
@@ -98,6 +101,4 @@ class MySQLERPAdapter(ERPPort):
             row = result.mappings().first()
             if row is None:
                 return None
-            # Extra safety: strip sensitive columns even though they're not in SELECT
             return _sanitize_row(dict(row))
-

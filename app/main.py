@@ -16,7 +16,7 @@ from app.api.middleware.security_middleware import SecurityMiddleware
 from app.api.v1.routers.agent_router import router as agent_router
 from app.api.v1.routers.health_router import router as health_router
 from app.config.settings import get_settings
-from app.infrastructure.db.mysql_client import close_db, init_db
+from app.infrastructure.db.mysql_client import close_db, init_db  # backed by SQL Server via aioodbc
 
 # Configuración de logging profesional
 logging.basicConfig(

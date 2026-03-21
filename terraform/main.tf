@@ -135,12 +135,12 @@ resource "azurerm_key_vault" "main" {
   soft_delete_retention_days  = 7
   purge_protection_enabled    = true
 
-  # Disable public network access — only reachable via Private Endpoint
-  public_network_access_enabled = false
+  public_network_access_enabled = true
 
   network_acls {
     default_action = "Deny"
     bypass         = "AzureServices"
+    ip_rules       = [var.terraform_ip]
   }
 
   tags = var.tags
@@ -163,9 +163,9 @@ resource "azurerm_key_vault_secret" "openai_api_key" {
   depends_on   = [azurerm_key_vault_access_policy.terraform]
 }
 
-resource "azurerm_key_vault_secret" "mysql_password" {
-  name         = "mysql-password"
-  value        = var.mysql_password
+resource "azurerm_key_vault_secret" "mssql_password" {
+  name         = "mssql-password"
+  value        = var.mssql_password
   key_vault_id = azurerm_key_vault.main.id
   depends_on   = [azurerm_key_vault_access_policy.terraform]
 }
@@ -258,25 +258,31 @@ resource "azurerm_cognitive_account" "openai" {
   }
 }
 
-# GPT-4o deployment
+# GPT-4o / GPT-4o-mini deployment
+# Set deploy_openai_models=false if your subscription has quota=0.
+# Request quota at: https://aka.ms/oai/quotaincrease
 resource "azurerm_cognitive_deployment" "gpt4o" {
-  name                 = "gpt-4o"
+  count                = var.deploy_openai_models ? 1 : 0
+  name                 = var.openai_model
   cognitive_account_id = azurerm_cognitive_account.openai.id
 
   model {
     format  = "OpenAI"
-    name    = "gpt-4o"
-    version = "2024-11-20"
+    name    = var.openai_model
+    version = var.openai_model == "gpt-4o-mini" ? "2024-07-18" : "2024-11-20"
   }
 
   scale {
-    type     = "GlobalStandard"
+    # If quota is still 0 after switching to gpt-4o-mini use Standard + capacity=1
+    # GlobalStandard requires pre-approved quota: https://aka.ms/oai/quotaincrease
+    type     = var.openai_deployment_type
     capacity = var.openai_capacity_tpm
   }
 }
 
 # text-embedding-3-small for ChromaDB RAG
 resource "azurerm_cognitive_deployment" "embeddings" {
+  count                = var.deploy_openai_models ? 1 : 0
   name                 = "text-embedding-3-small"
   cognitive_account_id = azurerm_cognitive_account.openai.id
 
@@ -287,8 +293,8 @@ resource "azurerm_cognitive_deployment" "embeddings" {
   }
 
   scale {
-    type     = "Standard"
-    capacity = 120
+    type     = var.openai_deployment_type
+    capacity = var.openai_capacity_tpm
   }
 }
 
@@ -314,55 +320,70 @@ resource "azurerm_private_endpoint" "openai" {
 }
 
 ##############################################################################
-# Azure Database for MySQL Flexible Server
+# Azure SQL Server (replaces MySQL Flexible Server)
+# Available in all regions — no per-subscription capacity restrictions
 ##############################################################################
 
-resource "azurerm_private_dns_zone" "mysql" {
-  name                = "privatelink.mysql.database.azure.com"
+resource "azurerm_private_dns_zone" "sql" {
+  name                = "privatelink.database.windows.net"
   resource_group_name = azurerm_resource_group.main.name
   tags                = var.tags
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "mysql" {
-  name                  = "vnet-link-mysql"
+resource "azurerm_private_dns_zone_virtual_network_link" "sql" {
+  name                  = "vnet-link-sql"
   resource_group_name   = azurerm_resource_group.main.name
-  private_dns_zone_name = azurerm_private_dns_zone.mysql.name
+  private_dns_zone_name = azurerm_private_dns_zone.sql.name
   virtual_network_id    = azurerm_virtual_network.main.id
   registration_enabled  = false
   tags                  = var.tags
 }
 
-resource "azurerm_mysql_flexible_server" "main" {
-  name                   = "mysql-${var.project}-${var.environment}"
-  resource_group_name    = azurerm_resource_group.main.name
-  location               = azurerm_resource_group.main.location
-  administrator_login    = var.mysql_admin_user
-  administrator_password = var.mysql_password
-  sku_name               = "GP_Standard_D2ds_v4"
-  version                = "8.0.21"
+resource "azurerm_mssql_server" "main" {
+  name                         = "sql-${var.project}-${var.environment}"
+  resource_group_name          = azurerm_resource_group.main.name
+  location                     = azurerm_resource_group.main.location
+  version                      = "12.0"
+  administrator_login          = var.mssql_admin_user
+  administrator_login_password = var.mssql_password
 
-  # VNet integration — no public endpoint created
-  delegated_subnet_id = azurerm_subnet.db.id
-  private_dns_zone_id = azurerm_private_dns_zone.mysql.id
-
-  backup_retention_days        = 7
-  geo_redundant_backup_enabled = false
-
-  # high_availability block omitted → HA disabled by default
-  # To enable: add high_availability { mode = "SameZone" } or "ZoneRedundant"
+  # Disable public access — only reachable via Private Endpoint
+  public_network_access_enabled = false
 
   tags = var.tags
-
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.mysql]
 }
 
-resource "azurerm_mysql_flexible_database" "main" {
-  name                = var.mysql_database
+resource "azurerm_mssql_database" "main" {
+  name      = var.mssql_database
+  server_id = azurerm_mssql_server.main.id
+  # Basic tier — cheapest option, enough for demo/prod-light workloads
+  # For production use: sku_name = "GP_S_Gen5_1" (serverless) or "S1"
+  sku_name  = var.mssql_sku
+
+  tags = var.tags
+}
+
+resource "azurerm_private_endpoint" "sql" {
+  name                = "pe-sql-${var.project}-${var.environment}"
   resource_group_name = azurerm_resource_group.main.name
-  server_name         = azurerm_mysql_flexible_server.main.name
-  charset             = "utf8mb4"
-  collation           = "utf8mb4_unicode_ci"
+  location            = azurerm_resource_group.main.location
+  subnet_id           = azurerm_subnet.private_endpoints.id
+
+  private_service_connection {
+    name                           = "psc-sql"
+    private_connection_resource_id = azurerm_mssql_server.main.id
+    subresource_names              = ["sqlServer"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "dns-group-sql"
+    private_dns_zone_ids = [azurerm_private_dns_zone.sql.id]
+  }
+
+  tags = var.tags
 }
+
 
 ##############################################################################
 # Container Apps — Log Analytics workspace
@@ -392,6 +413,13 @@ resource "azurerm_container_app_environment" "main" {
   internal_load_balancer_enabled = true # no public IP on the environment
 
   tags = var.tags
+
+  lifecycle {
+    # Azure auto-creates a managed resource group for the environment internals
+    # (ME_<name>_<rg>_<location>). The provider may detect drift on this read-only
+    # attribute and force replacement. Ignoring it prevents unnecessary destroy+recreate.
+    ignore_changes = [infrastructure_resource_group_name]
+  }
 }
 
 ##############################################################################
@@ -442,14 +470,12 @@ resource "azurerm_container_app" "api" {
 
   secret {
     name  = "openai-api-key"
-    # Reference directly from Key Vault via Managed Identity
-    # Format: keyvaultref:<secret-uri>,identityref:<identity-resource-id>
     value = "keyvaultref:${azurerm_key_vault.main.vault_uri}secrets/openai-api-key,identityref:${azurerm_user_assigned_identity.api.id}"
   }
 
   secret {
-    name  = "mysql-password"
-    value = "keyvaultref:${azurerm_key_vault.main.vault_uri}secrets/mysql-password,identityref:${azurerm_user_assigned_identity.api.id}"
+    name  = "mssql-password"
+    value = "keyvaultref:${azurerm_key_vault.main.vault_uri}secrets/mssql-password,identityref:${azurerm_user_assigned_identity.api.id}"
   }
 
   secret {
@@ -498,24 +524,28 @@ resource "azurerm_container_app" "api" {
         value = "chroma"
       }
       env {
-        name  = "MYSQL_HOST"
-        value = azurerm_mysql_flexible_server.main.fqdn
+        name  = "MSSQL_HOST"
+        value = azurerm_mssql_server.main.fully_qualified_domain_name
       }
       env {
-        name  = "MYSQL_PORT"
-        value = "3306"
+        name  = "MSSQL_PORT"
+        value = "1433"
       }
       env {
-        name  = "MYSQL_USER"
-        value = var.mysql_admin_user
+        name  = "MSSQL_USER"
+        value = var.mssql_admin_user
       }
       env {
-        name        = "MYSQL_PASSWORD"
-        secret_name = "mysql-password"
+        name        = "MSSQL_PASSWORD"
+        secret_name = "mssql-password"
       }
       env {
-        name  = "MYSQL_DATABASE"
-        value = var.mysql_database
+        name  = "MSSQL_DATABASE"
+        value = var.mssql_database
+      }
+      env {
+        name  = "MSSQL_DRIVER"
+        value = "ODBC Driver 18 for SQL Server"
       }
       env {
         name        = "VALID_API_KEYS"
@@ -576,7 +606,6 @@ resource "azurerm_container_app" "api" {
   depends_on = [
     azurerm_role_assignment.acr_pull,
     azurerm_role_assignment.kv_secrets,
-    azurerm_mysql_flexible_database.main,
     azurerm_private_endpoint.openai,
   ]
 }

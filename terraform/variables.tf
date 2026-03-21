@@ -64,27 +64,85 @@ variable "openai_api_key" {
 variable "openai_capacity_tpm" {
   description = "GPT-4o deployment capacity in thousands-of-tokens-per-minute (TPM)."
   type        = number
-  default     = 30 # 30k TPM — adjust to your quota
+  default     = 1
 }
 
-# ── MySQL ─────────────────────────────────────────────────────────────────────
+variable "openai_model" {
+  description = <<EOT
+Azure OpenAI chat model to deploy.
+- "gpt-4o"      → higher quality, requires quota approval (https://aka.ms/oai/quotaincrease)
+- "gpt-4o-mini" → available on most new subscriptions with minimal quota
+EOT
+  type        = string
+  default     = "gpt-4o-mini"
+}
 
-variable "mysql_admin_user" {
-  description = "Administrator login for MySQL Flexible Server."
+variable "deploy_openai_models" {
+  description = <<EOT
+Set to false to skip creating the Azure OpenAI model deployments.
+Useful when the subscription has quota=0 for the selected model.
+The Cognitive Account itself is still created; request quota increase at
+https://aka.ms/oai/quotaincrease, then set this to true and re-apply.
+EOT
+  type        = bool
+  default     = true
+}
+
+variable "openai_deployment_type" {
+  description = <<EOT
+Azure OpenAI deployment scale type.
+- "Standard"       → available on all subscriptions, lower throughput
+- "GlobalStandard" → higher throughput, requires pre-approved quota
+To check/request quota: https://aka.ms/oai/quotaincrease
+EOT
+  type        = string
+  default     = "Standard"
+
+  validation {
+    condition     = contains(["Standard", "GlobalStandard"], var.openai_deployment_type)
+    error_message = "openai_deployment_type must be 'Standard' or 'GlobalStandard'."
+  }
+}
+
+variable "terraform_ip" {
+  description = <<EOT
+Your public egress IP address (the machine running terraform apply).
+Added to Key Vault ip_rules so Terraform can write secrets during provisioning.
+Get it with: (Invoke-WebRequest https://api.ipify.org -UseBasicParsing).Content
+EOT
+  type        = string
+  default     = "38.190.72.74"
+}
+
+# ── Azure SQL (SQL Server) ────────────────────────────────────────────────────
+
+variable "mssql_admin_user" {
+  description = "Administrator login for Azure SQL Server."
   type        = string
   default     = "reactadmin"
 }
 
-variable "mysql_password" {
-  description = "Administrator password for MySQL Flexible Server — stored in Key Vault."
+variable "mssql_password" {
+  description = "Administrator password for Azure SQL Server — stored in Key Vault."
   type        = string
   sensitive   = true
 }
 
-variable "mysql_database" {
+variable "mssql_database" {
   description = "Name of the application database."
   type        = string
   default     = "react_db"
+}
+
+variable "mssql_sku" {
+  description = <<EOT
+SKU for Azure SQL Database.
+- "Basic"       → cheapest, 5 DTUs, dev/test only
+- "S1"          → 20 DTUs, light production
+- "GP_S_Gen5_1" → serverless, auto-pause, recommended for demos
+EOT
+  type        = string
+  default     = "Basic"
 }
 
 # ── Application security ──────────────────────────────────────────────────────

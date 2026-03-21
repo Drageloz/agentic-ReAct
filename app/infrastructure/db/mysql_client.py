@@ -1,5 +1,9 @@
 """
-Async MySQL connection pool using SQLAlchemy 2.x + aiomysql.
+Async SQL Server connection pool using SQLAlchemy 2.x + aioodbc.
+
+Works for:
+  - Local dev  : SQL Server in Docker (mcr.microsoft.com/mssql/server:2022-latest)
+  - Azure prod : Azure SQL Database / Azure SQL Managed Instance
 """
 from __future__ import annotations
 
@@ -36,4 +40,3 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
     if _session_factory is None:
         raise RuntimeError("Database not initialized. Call init_db() first.")
     return _session_factory
-
